@@ -157,7 +157,7 @@ def main():
     f = sourcefunc(x,y,Nx,Ny)
     
     # Generate coefficient K (modify/add this coefficient accordingly)
-    K = coeffK2(x1,y1,Nx,Ny)
+    K = coeffK1(x1,y1,Nx,Ny)
     
     # Get the sparse 2D FVM matrix A
     A = create2DLFVM(Nx,Ny,dx,dy,K)
