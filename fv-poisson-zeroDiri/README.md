@@ -1,66 +1,73 @@
-# 2D Poisson Solver (Finite Difference Method, Dirichlet BC)
+# 2D Poisson Solver (Finite Volume Method, Variable Coefficient)
 
-This project solves the 2D Poisson equation on a unifor rectangular domain using a
-finite difference discretization and sparse linear algebra.
+This project solves the **2D Poisson equation with both homogeneous and non-homogeneous coefficients** on a rectangular domain using the **Finite Volume Method (FVM)** and sparse linear algebra.
+
+---
 
 ## Problem
-We solve:
 
-$$
--\Delta u(x,y) = f(x,y), \quad (x,y)\in \Omega = [L_x, R_x]\times[L_y, R_y]
-$$
+We solve the generalized Poisson equation:
 
-with homogeneous Dirichlet boundary conditions:
-
-$$
-u(x,y) = 0, \quad (x,y)\in \partial\Omega
-$$
-
-The unknowns are defined on the interior grid points. The discrete system is:
-
-$$
-A\ \mathbf{u}=\mathbf{f}
-$$
-
-where \(A\) is the finite-difference Laplacian matrix assembled via Kronecker
-products.
-
-## Method
-- Uniform grid with `Nx` and `Ny` intervals in the \(x\) and \(y\) directions  
-- Second-order 5-point stencil for $-\Delta$ on interior nodes  
-- Sparse matrix assembly using:
 \[
-A = I_y \otimes L_{xx} + L_{yy} \otimes I_x
+-\nabla \cdot \left( K(x,y)\nabla u(x,y) \right) = f(x,y), \quad (x,y)\in \Omega
 \]
 
-where
+where:
 
-$$
-L_{xx} = D_x^{\mathsf T} D_x,\qquad L_{yy} = D_y^{\mathsf T} D_y.
-$$
-- Solve using `scipy.sparse.linalg.spsolve`
+- \(\Omega = [L_x, R_x] \times [L_y, R_y]\)  
+- \(K(x,y)\) is a spatially varying diffusion coefficient  
+- \(f(x,y)\) is the source term  
 
-## Inputs you can change
-In the Python file:
-- Domain limits: `LeftX, RightX, LeftY, RightY`
-- Grid: `Nx, Ny`
-- Source term: `sourcefunc(x, y)`
+### Boundary Conditions
 
-## How to run
-Install dependencies:
+Homogeneous Dirichlet boundary conditions:
 
-```bash
-pip install numpy scipy matplotlib
-python Poisson_FDM.py
-```
-## Output
-- Heat map of the source function
-- Heat map of the solution $u(x,y)$
+\[
+u(x,y) = 0, \quad (x,y)\in \partial\Omega
+\]
 
-Example figures showed in figures folder. The source function considered for the example is as follows:
-<img width="287" height="97" alt="image" src="https://github.com/user-attachments/assets/bde9a393-5112-4ee7-b75a-8c1be459d235" />
+---
 
-## Assumptions:
-- Uniform rectangular grid
-- Homogeneous Poisson's equation ($k=1$)
-- Zero dirichlet boundary condition
+## Method
+
+- Domain discretized into a **uniform Cartesian finite volume mesh**  
+- Unknowns are defined at **cell centers**  
+- Fluxes computed at control volume faces  
+- Second-order discretization using central differences  
+
+### Discrete System
+
+The system is written as:
+
+\[
+A \mathbf{u} = \mathbf{f}
+\]
+
+where:
+
+- \(A\) is a sparse matrix assembled from flux balances  
+- \(\mathbf{u}\) contains cell-centered unknowns  
+- \(\mathbf{f}\) is the source term  
+
+---
+
+## Key Features
+
+- Supports:  
+  - ✅ Homogeneous coefficient \(K = 1\)  
+  - ✅ Non-homogeneous coefficient \(K(x,y)\)  
+- Sparse matrix assembly using `scipy.sparse`  
+- Efficient linear solve using `scipy.sparse.linalg.spsolve`  
+- Modular structure for:  
+  - grid generation  
+  - coefficient definition  
+  - system assembly  
+
+---
+
+## Grid
+
+- Uniform grid with:
+
+```text
+Nx, Ny = number of control volumes in x and y directions
