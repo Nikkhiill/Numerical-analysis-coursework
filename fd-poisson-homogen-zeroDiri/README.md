@@ -63,4 +63,3 @@ Example figures showed in figures folder. The source function considered for the
 ## Assumptions:
 - Uniform rectangular grid
 - Homogeneous Poisson's equation ($k=1$)
-- Zero dirichlet boundary condition
