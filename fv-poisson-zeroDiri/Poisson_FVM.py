@@ -72,6 +72,15 @@ def coeffK2(x,y,Nx,Ny):
     return K
 
 
+def boundary_value(x,y):
+
+    """
+    Example non-zero Dirichlet BC
+    """
+
+    return 0*np.ones_like(x)
+
+
 def create2DLFVM(Nx,Ny,dx,dy,K):
     
     """ Creates a 2D FVM matrix for homogeneous and non-homogeneous Poisson
@@ -105,7 +114,47 @@ def create2DLFVM(Nx,Ny,dx,dy,K):
     return A
 
 
-def homPoisson_zeroDiri_solve(A, f, order = "f"):
+def apply_nonzero_dirichlet(f,Nx,Ny,dx,dy,LeftX,RightX,LeftY,RightY):
+    
+    """ Modifies the RHS vector to include non zero dirichlet BC """
+    
+    f_mod = f.copy()
+
+    x = np.linspace(LeftX,RightX,Nx+1)
+    y = np.linspace(LeftY,RightY,Ny+1)
+
+    # LEFT boundary
+    for j in range(Ny-1):
+
+        bc = boundary_value(LeftX,y[j+1])
+
+        f_mod[0,j] += bc/(dx*dx)
+
+    # RIGHT boundary
+    for j in range(Ny-1):
+
+        bc = boundary_value(RightX,y[j+1])
+
+        f_mod[Nx-2,j] += bc/(dx*dx)
+
+    # BOTTOM boundary
+    for i in range(Nx-1):
+
+        bc = boundary_value(x[i+1],LeftY)
+
+        f_mod[i,0] += bc/(dy*dy)
+
+    # TOP boundary
+    for i in range(Nx-1):
+
+        bc = boundary_value(x[i+1],RightY)
+
+        f_mod[i,Ny-2] += bc/(dy*dy)
+
+    return f_mod
+
+
+def solve(A,f,Nx,Ny,LeftX,RightX,LeftY,RightY,order="f"):
     
     """
     Given the system matrix A and the source function f,
@@ -119,12 +168,33 @@ def homPoisson_zeroDiri_solve(A, f, order = "f"):
     
     # Solve u = A^{-1} * f
     u = la.spsolve(A,fLX)
+    
     u2d = u.reshape(f.shape, order=order)
     
-    # Convert 1d solution array u to a 2d array and append 0's corresponding to zero Dirichlet BC
-    uArr = np.pad(u2d, pad_width=((1, 1), (1, 1)), mode="constant", constant_values=0.0)
+    uArr = np.zeros((Nx+1,Ny+1))
     
+    # interior
+    uArr[1:-1,1:-1] = u2d
+
+    x = np.linspace(LeftX,RightX,Nx+1)
+    y = np.linspace(LeftY,RightY,Ny+1)
+
+    # left/right boundaries
+    for j in range(Ny+1):
+
+        uArr[0,j] = boundary_value(LeftX,y[j])
+
+        uArr[-1,j] = boundary_value(RightX,y[j])
+
+    # bottom/top boundaries
+    for i in range(Nx+1):
+
+        uArr[i,0] = boundary_value(x[i],LeftY)
+
+        uArr[i,-1] = boundary_value(x[i],RightY)
+
     return uArr
+
 
 def plot_field(field, LeftX,RightX,LeftY,RightY, title):
     
@@ -157,13 +227,15 @@ def main():
     f = sourcefunc(x,y,Nx,Ny)
     
     # Generate coefficient K (modify/add this coefficient accordingly)
-    K = coeffK1(x1,y1,Nx,Ny)
+    K = coeffK2(x1,y1,Nx,Ny)
     
     # Get the sparse 2D FVM matrix A
     A = create2DLFVM(Nx,Ny,dx,dy,K)
     
+    f_mod = apply_nonzero_dirichlet(f,Nx,Ny,dx,dy,LeftX,RightX,LeftY,RightY)
+    
     # Main solve
-    u = homPoisson_zeroDiri_solve(A, f, order = "f")
+    u = solve(A, f_mod, Nx,Ny,LeftX,RightX,LeftY,RightY,order='f')
     
     # plotting the desired fields
     plot_field(f, LeftX,RightX,LeftY,RightY, 'Source function f')
