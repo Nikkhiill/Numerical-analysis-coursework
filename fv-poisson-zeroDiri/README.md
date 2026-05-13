@@ -20,10 +20,10 @@ where:
 
 ### Boundary Conditions
 
-Homogeneous Dirichlet boundary conditions:
+Homogeneous and non-homogeneous Dirichlet boundary conditions:
 
 \[
-u(x,y) = 0, \quad (x,y)\in \partial\Omega
+u(x,y) = \( \Bar{u} \), \quad (x,y)\in \partial\Omega
 \]
 
 ---
